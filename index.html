@@ -19,6 +19,7 @@
             overflow: hidden;
             background-color: #ffffff;
             font-family: system-ui, -apple-system, sans-serif;
+            transition: background-color 0.25s ease;
         }
 
         /* Panel Tombol Pindah Kursi di Bagian Bawah Tengah */
@@ -84,13 +85,13 @@
             <a-asset-item id="asset-kursi-4" src="kursi_rotan3.glb"></a-asset-item>
         </a-assets>
 
-        <!-- Pencahayaan Merata untuk Background Putih -->
+        <!-- Pencahayaan Merata -->
         <a-light type="ambient" color="#ffffff" intensity="1.2"></a-light>
         <a-light type="directional" position="2 4 3" intensity="0.9"></a-light>
         <a-light type="directional" position="-2 2 -3" intensity="0.6"></a-light>
 
-        <!-- Background Putih Bersih -->
-        <a-sky color="#ffffff"></a-sky>
+        <!-- Background Dinamis -->
+        <a-sky id="latar-belakang" color="#ffffff"></a-sky>
 
         <!-- Objek Kursi Aktif -->
         <a-entity 
@@ -123,26 +124,50 @@
     <script>
         const buttons = document.querySelectorAll('.chair-btn');
         const chairEntity = document.querySelector('#objek-rotan');
+        const skyEntity = document.querySelector('#latar-belakang');
 
-        // Mapping nama file ke ID asset agar perpindahan instan
-        const assetMap = {
-            'kursi_rotan.glb': '#asset-kursi-1',
-            'kursi_rotan1.glb': '#asset-kursi-2',
-            'kursi_rotan2.glb': '#asset-kursi-3',
-            'kursi_rotan3.glb': '#asset-kursi-4'
+        // Konfigurasi per kursi: asset, ukuran (scale), posisi (position), dan warna background
+        const chairConfig = {
+            'kursi_rotan.glb': {
+                asset: '#asset-kursi-1',
+                scale: '1 1 1',
+                position: '0 -0.45 0',
+                bg: '#ffffff'
+            },
+            'kursi_rotan1.glb': {
+                asset: '#asset-kursi-2',
+                scale: '0.25 0.25 0.25',
+                position: '0 -0.45 0',
+                bg: '#7c4d2b' // Warna cokelat untuk Kursi 2
+            },
+            'kursi_rotan2.glb': {
+                asset: '#asset-kursi-3',
+                scale: '1 1 1',
+                position: '0 -0.45 0',
+                bg: '#ffffff'
+            },
+            'kursi_rotan3.glb': {
+                asset: '#asset-kursi-4',
+                scale: '0.08 0.08 0.08',
+                position: '0 -0.25 0',
+                bg: '#ffffff'
+            }
         };
 
         buttons.forEach((btn) => {
             btn.addEventListener('click', () => {
                 const fileName = btn.getAttribute('data-src');
-                const targetAsset = assetMap[fileName];
+                const config = chairConfig[fileName];
 
-                if (!targetAsset) return;
+                if (!config) return;
 
-                // Ganti model 3D kursi
-                chairEntity.setAttribute('gltf-model', targetAsset);
+                chairEntity.setAttribute('gltf-model', config.asset);
+                chairEntity.setAttribute('scale', config.scale);
+                chairEntity.setAttribute('position', config.position);
 
-                // Perbarui status tombol aktif
+                skyEntity.setAttribute('color', config.bg);
+                document.body.style.backgroundColor = config.bg;
+
                 buttons.forEach((b) => b.classList.remove('active'));
                 btn.classList.add('active');
             });
