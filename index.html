@@ -77,14 +77,6 @@
         loading-screen="dotsColor: #333333; backgroundColor: #ffffff"
         vr-mode-ui="enabled: true">
 
-        <!-- Memuat Semua File .glb -->
-        <a-assets>
-            <a-asset-item id="asset-kursi-1" src="kursi_rotan.glb"></a-asset-item>
-            <a-asset-item id="asset-kursi-2" src="kursi_rotan1.glb"></a-asset-item>
-            <a-asset-item id="asset-kursi-3" src="kursi_rotan2.glb"></a-asset-item>
-            <a-asset-item id="asset-kursi-4" src="kursi_rotan3.glb"></a-asset-item>
-        </a-assets>
-
         <!-- Pencahayaan Merata -->
         <a-light type="ambient" color="#ffffff" intensity="1.2"></a-light>
         <a-light type="directional" position="2 4 3" intensity="0.9"></a-light>
@@ -96,7 +88,7 @@
         <!-- Objek Kursi Aktif -->
         <a-entity 
             id="objek-rotan"
-            gltf-model="#asset-kursi-1" 
+            gltf-model="kursi_rotan.glb" 
             position="0 -0.45 0" 
             rotation="0 25 0"
             scale="1 1 1">
@@ -110,8 +102,8 @@
             orbit-controls="
                 target: 0 0 0; 
                 initialPosition: 0 0.35 1.35; 
-                minDistance: 0.7; 
-                maxDistance: 3.5; 
+                minDistance: 0.5; 
+                maxDistance: 5; 
                 rotateSpeed: 1.5; 
                 zoomSpeed: 1.2; 
                 enablePan: false; 
@@ -126,33 +118,86 @@
         const chairEntity = document.querySelector('#objek-rotan');
         const skyEntity = document.querySelector('#latar-belakang');
 
-        // Konfigurasi per kursi: asset, ukuran (scale), posisi (position), dan warna background
+        // Pengaturan per kursi:
+        // - scale: ukuran model
+        // - baseY: posisi vertikal dasar
+        // - offsetX, offsetY, offsetZ: koreksi geser halus jika masih kurang pas
+        // - autoCenter: true agar otomatis dipusatkan berdasarkan ukuran bounding box model
+        // - bg: warna background
         const chairConfig = {
             'kursi_rotan.glb': {
-                asset: '#asset-kursi-1',
                 scale: '1 1 1',
-                position: '0 -0.45 0',
-                bg: '#ffffff'
+                baseY: -0.45,
+                offsetX: 0,
+                offsetY: 0,
+                offsetZ: 0,
+                autoCenter: false,
+                bg: '#7c4d2b'
             },
             'kursi_rotan1.glb': {
-                asset: '#asset-kursi-2',
-                scale: '0.25 0.25 0.25',
-                position: '0 -0.45 0',
-                bg: '#7c4d2b' // Warna cokelat untuk Kursi 2
+                scale: '0.2 0.2 0.2',
+                baseY: -0.45,
+                offsetX: 0,
+                offsetY: -0.05,
+                offsetZ: 0,
+                autoCenter: true,
+                bg: '#7c4d2b' // Background cokelat untuk kursi putih
             },
             'kursi_rotan2.glb': {
-                asset: '#asset-kursi-3',
                 scale: '1 1 1',
-                position: '0 -0.45 0',
-                bg: '#ffffff'
+                baseY: -0.45,
+                offsetX: 0,
+                offsetY: 0,
+                offsetZ: 0,
+                autoCenter: false,
+                bg: '#7c4d2b'
             },
             'kursi_rotan3.glb': {
-                asset: '#asset-kursi-4',
-                scale: '0.08 0.08 0.08',
-                position: '0 -0.25 0',
-                bg: '#ffffff'
+                scale: '0.15 0.15 0.15',
+                baseY: -0.55, // Diturunkan agar tidak terlalu ke atas
+                offsetX: 0,
+                offsetY: -0.12,
+                offsetZ: 0,
+                autoCenter: true,
+                bg: '#7c4d2b'
             }
         };
+
+        let activeConfig = chairConfig['kursi_rotan.glb'];
+
+        function centerModelIfNeeded() {
+            const mesh = chairEntity.getObject3D('mesh');
+            if (!mesh) return;
+
+            // Reset posisi dulu sebelum menghitung bounding box
+            chairEntity.object3D.position.set(0, activeConfig.baseY, 0);
+            chairEntity.object3D.updateMatrixWorld(true);
+
+            if (activeConfig.autoCenter) {
+                const box = new THREE.Box3().setFromObject(mesh);
+                if (!box.isEmpty()) {
+                    const center = new THREE.Vector3();
+                    box.getCenter(center);
+
+                    // Geser objek agar titik tengah bounding box berada di (0, 0, 0) lalu terapkan offset
+                    const newX = -center.x + (activeConfig.offsetX || 0);
+                    const newY = -center.y + (activeConfig.offsetY || 0);
+                    const newZ = -center.z + (activeConfig.offsetZ || 0);
+
+                    chairEntity.object3D.position.set(newX, newY, newZ);
+                }
+            } else {
+                chairEntity.object3D.position.set(
+                    activeConfig.offsetX || 0,
+                    activeConfig.baseY + (activeConfig.offsetY || 0),
+                    activeConfig.offsetZ || 0
+                );
+            }
+        }
+
+        chairEntity.addEventListener('model-loaded', () => {
+            centerModelIfNeeded();
+        });
 
         buttons.forEach((btn) => {
             btn.addEventListener('click', () => {
@@ -161,13 +206,23 @@
 
                 if (!config) return;
 
-                chairEntity.setAttribute('gltf-model', config.asset);
-                chairEntity.setAttribute('scale', config.scale);
-                chairEntity.setAttribute('position', config.position);
+                activeConfig = config;
 
+                // Atur scale terlebih dahulu
+                chairEntity.setAttribute('scale', config.scale);
+
+                // Ganti model (jika modelnya sama, panggil centerModelIfNeeded langsung)
+                if (chairEntity.getAttribute('gltf-model') === fileName) {
+                    centerModelIfNeeded();
+                } else {
+                    chairEntity.setAttribute('gltf-model', fileName);
+                }
+
+                // Ubah warna background
                 skyEntity.setAttribute('color', config.bg);
                 document.body.style.backgroundColor = config.bg;
 
+                // Perbarui tombol aktif
                 buttons.forEach((b) => b.classList.remove('active'));
                 btn.classList.add('active');
             });
