@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Kursi Rotan 3D & VR</title>
+    <title>Katalog Kursi 3D & VR</title>
     
     <!-- Memuat Library A-Frame -->
     <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
@@ -18,21 +18,70 @@
             height: 100%;
             overflow: hidden;
             background-color: #ffffff;
+            font-family: system-ui, -apple-system, sans-serif;
+        }
+
+        /* Panel Tombol Pindah Kursi di Bagian Bawah Tengah */
+        #chair-switcher {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 20;
+            display: flex;
+            gap: 8px;
+            padding: 8px 10px;
+            background: rgba(255, 255, 255, 0.92);
+            border: 1px solid #e2e2e2;
+            border-radius: 999px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(6px);
+            max-width: 92vw;
+            overflow-x: auto;
+        }
+
+        .chair-btn {
+            border: none;
+            background: #f2f2f2;
+            color: #222222;
+            padding: 8px 14px;
+            border-radius: 999px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.2s ease;
+        }
+
+        .chair-btn.active {
+            background: #1f1f1f;
+            color: #ffffff;
         }
     </style>
 </head>
 <body>
 
-    <!-- Kanvas Utama 3D / VR (Antialias & Shadow dimatikan agar sangat ringan dan responsif di HP) -->
+    <!-- Tombol untuk Pindah Antar 4 Kursi -->
+    <div id="chair-switcher" role="group" aria-label="Pilih Model Kursi">
+        <button class="chair-btn active" data-src="kursi_rotan.glb">Kursi 1</button>
+        <button class="chair-btn" data-src="kursi_rotan1.glb">Kursi 2</button>
+        <button class="chair-btn" data-src="kursi_rotan2.glb">Kursi 3</button>
+        <button class="chair-btn" data-src="kursi_rotan3.glb">Kursi 4</button>
+    </div>
+
+    <!-- Kanvas Utama 3D / VR -->
     <a-scene 
         renderer="colorManagement: true; antialias: true;" 
         xr-mode-ui="enabled: true"
         loading-screen="dotsColor: #333333; backgroundColor: #ffffff"
         vr-mode-ui="enabled: true">
 
-        <!-- Memuat File .glb -->
+        <!-- Memuat Semua File .glb -->
         <a-assets>
-            <a-asset-item id="model-kursi" src="kursi_rotan.glb"></a-asset-item>
+            <a-asset-item id="asset-kursi-1" src="kursi_rotan.glb"></a-asset-item>
+            <a-asset-item id="asset-kursi-2" src="kursi_rotan1.glb"></a-asset-item>
+            <a-asset-item id="asset-kursi-3" src="kursi_rotan2.glb"></a-asset-item>
+            <a-asset-item id="asset-kursi-4" src="kursi_rotan3.glb"></a-asset-item>
         </a-assets>
 
         <!-- Pencahayaan Merata untuk Background Putih -->
@@ -43,17 +92,18 @@
         <!-- Background Putih Bersih -->
         <a-sky color="#ffffff"></a-sky>
 
-        <!-- Objek Utama: Kursi Rotan -->
+        <!-- Objek Kursi Aktif -->
         <a-entity 
             id="objek-rotan"
-            gltf-model="#model-kursi" 
+            gltf-model="#asset-kursi-1" 
             position="0 -0.45 0" 
             rotation="0 25 0"
             scale="1 1 1">
         </a-entity>
 
-        <!-- Kamera Pengunjung: Jarak diperdekat & rotasi dibuat lebih cepat/responsif -->
+        <!-- Kamera Pengunjung -->
         <a-entity 
+            id="kamera-utama"
             camera 
             look-controls="enabled: false" 
             orbit-controls="
@@ -69,6 +119,35 @@
         </a-entity>
 
     </a-scene>
+
+    <script>
+        const buttons = document.querySelectorAll('.chair-btn');
+        const chairEntity = document.querySelector('#objek-rotan');
+
+        // Mapping nama file ke ID asset agar perpindahan instan
+        const assetMap = {
+            'kursi_rotan.glb': '#asset-kursi-1',
+            'kursi_rotan1.glb': '#asset-kursi-2',
+            'kursi_rotan2.glb': '#asset-kursi-3',
+            'kursi_rotan3.glb': '#asset-kursi-4'
+        };
+
+        buttons.forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const fileName = btn.getAttribute('data-src');
+                const targetAsset = assetMap[fileName];
+
+                if (!targetAsset) return;
+
+                // Ganti model 3D kursi
+                chairEntity.setAttribute('gltf-model', targetAsset);
+
+                // Perbarui status tombol aktif
+                buttons.forEach((b) => b.classList.remove('active'));
+                btn.classList.add('active');
+            });
+        });
+    </script>
 
 </body>
 </html>
