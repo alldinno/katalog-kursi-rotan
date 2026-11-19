@@ -2,107 +2,70 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Katalog VR & 3D - Kursi Rotan</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Kursi Rotan 3D & VR</title>
     
-    <!-- Memuat Library A-Frame untuk dukungan WebXR (VR & AR) -->
+    <!-- Memuat Library A-Frame -->
     <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
-    <!-- Memuat Library Orbit Controls agar model bisa diputar-putar di layar HP/PC -->
+    <!-- Memuat Library Orbit Controls -->
     <script src="https://cdn.jsdelivr.net/gh/supermedium/superframe@master/components/orbit-controls/dist/aframe-orbit-controls.min.js"></script>
     
     <style>
-        body {
+        html, body {
             margin: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            padding: 0;
+            width: 100%;
+            height: 100%;
             overflow: hidden;
-        }
-
-        /* Tampilan Overlay Informasi Produk di Layar */
-        #ui-overlay {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            z-index: 10;
-            background: rgba(255, 255, 255, 0.9);
-            padding: 15px 20px;
-            border-radius: 12px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
-            max-width: 300px;
-            backdrop-filter: blur(5px);
-        }
-
-        #ui-overlay h1 {
-            margin: 0 0 5px 0;
-            font-size: 18px;
-            color: #4a3520; /* Warna cokelat kayu/rotan */
-        }
-
-        #ui-overlay p {
-            margin: 0;
-            font-size: 13px;
-            color: #555;
-            line-height: 1.4;
-        }
-
-        .instruction {
-            margin-top: 10px !important;
-            padding-top: 8px;
-            border-top: 1px solid #ddd;
-            font-size: 12px !important;
-            color: #777 !important;
+            background-color: #ffffff;
         }
     </style>
 </head>
 <body>
 
-    <!-- Kartu Informasi Produk di Pojok Kiri Atas -->
-    <div id="ui-overlay">
-        <h1>Kursi Rotan Alami</h1>
-        <p>Anyaman rotan berkualitas tinggi. Cocok untuk ruang tamu, teras, maupun kafe.</p>
-        <p class="instruction">
-            • <b>Geser layar</b> untuk memutar 360°<br>
-            • <b>Cubit layar</b> untuk memperbesar<br>
-            • Klik ikon <b>Kacamata VR</b> di pojok kanan bawah untuk masuk ke mode Virtual Reality.
-        </p>
-    </div>
-
-    <!-- Kanvas Utama 3D / VR WebXR -->
+    <!-- Kanvas Utama 3D / VR (Antialias & Shadow dimatikan agar sangat ringan dan responsif di HP) -->
     <a-scene 
-        renderer="colorManagement: true; physicallyCorrectLights: true;" 
+        renderer="colorManagement: true; antialias: true;" 
         xr-mode-ui="enabled: true"
-        loading-screen="dotsColor: #8B5A2B; backgroundColor: #F5F2EB">
+        loading-screen="dotsColor: #333333; backgroundColor: #ffffff"
+        vr-mode-ui="enabled: true">
 
-        <!-- Manajemen Aset (Memuat File .glb Anda) -->
+        <!-- Memuat File .glb -->
         <a-assets>
-            <!-- PASTIKAN nama file di bawah ini sama persis dengan nama file .glb Anda -->
             <a-asset-item id="model-kursi" src="kursi_rotan.glb"></a-asset-item>
         </a-assets>
 
-        <!-- Pencahayaan Ruang Virtual agar tekstur rotan terlihat nyata -->
-        <a-light type="ambient" color="#ffffff" intensity="0.8"></a-light>
-        <a-light type="directional" position="2 4 3" intensity="1.2" castShadow="true"></a-light>
-        <a-light type="directional" position="-2 2 -3" intensity="0.5" color="#fff5e6"></a-light>
+        <!-- Pencahayaan Merata untuk Background Putih -->
+        <a-light type="ambient" color="#ffffff" intensity="1.2"></a-light>
+        <a-light type="directional" position="2 4 3" intensity="0.9"></a-light>
+        <a-light type="directional" position="-2 2 -3" intensity="0.6"></a-light>
 
-        <!-- Lingkungan / Latar Belakang Ruang Showroom Virtual -->
-        <a-sky color="#EAE5DC"></a-sky>
-        <!-- Lantai pijakan di mode VR -->
-        <a-circle position="0 0 0" rotation="-90 0 0" radius="4" color="#D6CEC2" shadow="receive: true"></a-circle>
+        <!-- Background Putih Bersih -->
+        <a-sky color="#ffffff"></a-sky>
 
-        <!-- Objek Utama: Model 3D Kursi Rotan -->
+        <!-- Objek Utama: Kursi Rotan -->
         <a-entity 
             id="objek-rotan"
             gltf-model="#model-kursi" 
-            position="0 0 0" 
-            rotation="0 30 0"
-            scale="1 1 1"
-            shadow="cast: true">
+            position="0 -0.45 0" 
+            rotation="0 25 0"
+            scale="1 1 1">
         </a-entity>
 
-        <!-- Kamera Pengunjung (Bisa dikontrol dengan sentuhan layar maupun gerakan kepala di VR) -->
+        <!-- Kamera Pengunjung: Jarak diperdekat & rotasi dibuat lebih cepat/responsif -->
         <a-entity 
             camera 
-            look-controls="enabled: true" 
-            orbit-controls="target: 0 0.5 0; minDistance: 0.8; maxDistance: 4; initialPosition: 0 1.2 2.2">
+            look-controls="enabled: false" 
+            orbit-controls="
+                target: 0 0 0; 
+                initialPosition: 0 0.35 1.35; 
+                minDistance: 0.7; 
+                maxDistance: 3.5; 
+                rotateSpeed: 1.5; 
+                zoomSpeed: 1.2; 
+                enablePan: false; 
+                enableDamping: true; 
+                dampingFactor: 0.1;">
         </a-entity>
 
     </a-scene>
