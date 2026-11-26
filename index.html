@@ -119,10 +119,10 @@
         const skyEntity = document.querySelector('#latar-belakang');
 
         // Pengaturan per kursi:
-        // - scale: ukuran model
+        // - scale: ukuran model (perbesar jika terlihat terlalu kecil/jauh, perkecil jika terlalu besar/dekat)
         // - baseY: posisi vertikal dasar
-        // - offsetX, offsetY, offsetZ: koreksi geser halus jika masih kurang pas
-        // - autoCenter: true agar otomatis dipusatkan berdasarkan ukuran bounding box model
+        // - offsetX, offsetY, offsetZ: koreksi geser halus
+        // - autoCenter: otomatis pusatkan titik tengah bounding box model
         // - bg: warna background
         const chairConfig = {
             'kursi_rotan.glb': {
@@ -132,10 +132,10 @@
                 offsetY: 0,
                 offsetZ: 0,
                 autoCenter: false,
-                bg: '#7c4d2b'
+                bg: '#ffffff'
             },
             'kursi_rotan1.glb': {
-                scale: '0.2 0.2 0.2',
+                scale: '0.45 0.45 0.45', // Diperbesar dari 0.2 agar tidak terlalu kecil/jauh
                 baseY: -0.45,
                 offsetX: 0,
                 offsetY: -0.05,
@@ -150,16 +150,16 @@
                 offsetY: 0,
                 offsetZ: 0,
                 autoCenter: false,
-                bg: '#7c4d2b'
+                bg: '#ffffff'
             },
             'kursi_rotan3.glb': {
-                scale: '0.15 0.15 0.15',
-                baseY: -0.55, // Diturunkan agar tidak terlalu ke atas
+                scale: '0.065 0.065 0.065', // Diperkecil dari 0.15 agar tidak terlalu besar/dekat
+                baseY: -0.45,
                 offsetX: 0,
-                offsetY: -0.12,
+                offsetY: -0.08,
                 offsetZ: 0,
                 autoCenter: true,
-                bg: '#7c4d2b'
+                bg: '#ffffff'
             }
         };
 
@@ -169,7 +169,10 @@
             const mesh = chairEntity.getObject3D('mesh');
             if (!mesh) return;
 
-            // Reset posisi dulu sebelum menghitung bounding box
+            // Terapkan scale terlebih dahulu agar bounding box dihitung sesuai ukuran final
+            chairEntity.object3D.scale.set(
+                ...activeConfig.scale.split(' ').map(Number)
+            );
             chairEntity.object3D.position.set(0, activeConfig.baseY, 0);
             chairEntity.object3D.updateMatrixWorld(true);
 
@@ -179,7 +182,6 @@
                     const center = new THREE.Vector3();
                     box.getCenter(center);
 
-                    // Geser objek agar titik tengah bounding box berada di (0, 0, 0) lalu terapkan offset
                     const newX = -center.x + (activeConfig.offsetX || 0);
                     const newY = -center.y + (activeConfig.offsetY || 0);
                     const newZ = -center.z + (activeConfig.offsetZ || 0);
@@ -207,22 +209,17 @@
                 if (!config) return;
 
                 activeConfig = config;
-
-                // Atur scale terlebih dahulu
                 chairEntity.setAttribute('scale', config.scale);
 
-                // Ganti model (jika modelnya sama, panggil centerModelIfNeeded langsung)
                 if (chairEntity.getAttribute('gltf-model') === fileName) {
                     centerModelIfNeeded();
                 } else {
                     chairEntity.setAttribute('gltf-model', fileName);
                 }
 
-                // Ubah warna background
                 skyEntity.setAttribute('color', config.bg);
                 document.body.style.backgroundColor = config.bg;
 
-                // Perbarui tombol aktif
                 buttons.forEach((b) => b.classList.remove('active'));
                 btn.classList.add('active');
             });
