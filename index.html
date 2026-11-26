@@ -118,12 +118,7 @@
         const chairEntity = document.querySelector('#objek-rotan');
         const skyEntity = document.querySelector('#latar-belakang');
 
-        // Pengaturan per kursi:
-        // - scale: ukuran model (perbesar jika terlihat terlalu kecil/jauh, perkecil jika terlalu besar/dekat)
-        // - baseY: posisi vertikal dasar
-        // - offsetX, offsetY, offsetZ: koreksi geser halus
-        // - autoCenter: otomatis pusatkan titik tengah bounding box model
-        // - bg: warna background
+        // Pengaturan per kursi: Kursi 1 & 2 dipertahankan, Kursi 3 & 4 diperkecil skalanya
         const chairConfig = {
             'kursi_rotan.glb': {
                 scale: '1 1 1',
@@ -135,16 +130,16 @@
                 bg: '#ffffff'
             },
             'kursi_rotan1.glb': {
-                scale: '0.45 0.45 0.45', // Diperbesar dari 0.2 agar tidak terlalu kecil/jauh
+                scale: '0.45 0.45 0.45',
                 baseY: -0.45,
                 offsetX: 0,
                 offsetY: -0.05,
                 offsetZ: 0,
                 autoCenter: true,
-                bg: '#7c4d2b' // Background cokelat untuk kursi putih
+                bg: '#7c4d2b'
             },
             'kursi_rotan2.glb': {
-                scale: '1 1 1',
+                scale: '0.55 0.55 0.55', // Diperkecil dari 1 1 1 agar tidak terlalu dekat/besar
                 baseY: -0.45,
                 offsetX: 0,
                 offsetY: 0,
@@ -153,10 +148,10 @@
                 bg: '#ffffff'
             },
             'kursi_rotan3.glb': {
-                scale: '0.065 0.065 0.065', // Diperkecil dari 0.15 agar tidak terlalu besar/dekat
+                scale: '0.035 0.035 0.035', // Diperkecil dari 0.065 agar tidak terlalu dekat/besar
                 baseY: -0.45,
                 offsetX: 0,
-                offsetY: -0.08,
+                offsetY: -0.05,
                 offsetZ: 0,
                 autoCenter: true,
                 bg: '#ffffff'
@@ -169,7 +164,6 @@
             const mesh = chairEntity.getObject3D('mesh');
             if (!mesh) return;
 
-            // Terapkan scale terlebih dahulu agar bounding box dihitung sesuai ukuran final
             chairEntity.object3D.scale.set(
                 ...activeConfig.scale.split(' ').map(Number)
             );
