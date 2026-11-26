@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Katalog Kursi 3D & VR</title>
     
     <!-- Memuat Library A-Frame -->
@@ -20,43 +20,66 @@
             background-color: #ffffff;
             font-family: system-ui, -apple-system, sans-serif;
             transition: background-color 0.25s ease;
+            touch-action: none;
         }
 
-        /* Panel Tombol Pindah Kursi di Bagian Bawah Tengah */
+        a-scene {
+            width: 100vw;
+            height: 100dvh;
+            display: block;
+        }
+
+        /* Panel Tombol Pindah Kursi Responsif di Bagian Bawah */
         #chair-switcher {
             position: fixed;
-            bottom: 20px;
+            bottom: max(16px, env(safe-area-inset-bottom));
             left: 50%;
             transform: translateX(-50%);
             z-index: 20;
             display: flex;
-            gap: 8px;
-            padding: 8px 10px;
-            background: rgba(255, 255, 255, 0.92);
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 6px 8px;
+            background: rgba(255, 255, 255, 0.94);
             border: 1px solid #e2e2e2;
             border-radius: 999px;
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
-            backdrop-filter: blur(6px);
-            max-width: 92vw;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
+            backdrop-filter: blur(8px);
+            max-width: 94vw;
             overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
         }
 
         .chair-btn {
             border: none;
             background: #f2f2f2;
             color: #222222;
-            padding: 8px 14px;
+            padding: 8px 12px;
             border-radius: 999px;
-            font-size: 13px;
+            font-size: 12.5px;
             font-weight: 600;
             cursor: pointer;
             white-space: nowrap;
             transition: all 0.2s ease;
+            -webkit-tap-highlight-color: transparent;
         }
 
         .chair-btn.active {
             background: #1f1f1f;
             color: #ffffff;
+        }
+
+        @media (min-width: 640px) {
+            #chair-switcher {
+                bottom: 20px;
+                gap: 8px;
+                padding: 8px 10px;
+            }
+            .chair-btn {
+                padding: 8px 14px;
+                font-size: 13px;
+            }
         }
     </style>
 </head>
@@ -72,7 +95,7 @@
 
     <!-- Kanvas Utama 3D / VR -->
     <a-scene 
-        renderer="colorManagement: true; antialias: true;" 
+        renderer="colorManagement: true; antialias: true; powerPreference: high-performance;" 
         xr-mode-ui="enabled: true"
         loading-screen="dotsColor: #333333; backgroundColor: #ffffff"
         vr-mode-ui="enabled: true">
@@ -101,14 +124,14 @@
             look-controls="enabled: false" 
             orbit-controls="
                 target: 0 0 0; 
-                initialPosition: 0 0.35 1.35; 
-                minDistance: 0.5; 
-                maxDistance: 5; 
-                rotateSpeed: 1.5; 
-                zoomSpeed: 1.2; 
+                initialPosition: 0 0.35 1.5; 
+                minDistance: 0.45; 
+                maxDistance: 5.5; 
+                rotateSpeed: 1.6; 
+                zoomSpeed: 1.25; 
                 enablePan: false; 
                 enableDamping: true; 
-                dampingFactor: 0.1;">
+                dampingFactor: 0.12;">
         </a-entity>
 
     </a-scene>
@@ -116,12 +139,14 @@
     <script>
         const buttons = document.querySelectorAll('.chair-btn');
         const chairEntity = document.querySelector('#objek-rotan');
+        const cameraEntity = document.querySelector('#kamera-utama');
         const skyEntity = document.querySelector('#latar-belakang');
 
-        // Pengaturan per kursi: Kursi 1 & 2 dipertahankan, Kursi 3 & 4 diperkecil skalanya
+        // Pengaturan dasar per kursi
         const chairConfig = {
             'kursi_rotan.glb': {
-                scale: '1 1 1',
+                scale: 1,
+                mobileScaleFactor: 0.85,
                 baseY: -0.45,
                 offsetX: 0,
                 offsetY: 0,
@@ -130,7 +155,8 @@
                 bg: '#ffffff'
             },
             'kursi_rotan1.glb': {
-                scale: '0.45 0.45 0.45',
+                scale: 0.45,
+                mobileScaleFactor: 0.85,
                 baseY: -0.45,
                 offsetX: 0,
                 offsetY: -0.05,
@@ -139,7 +165,8 @@
                 bg: '#7c4d2b'
             },
             'kursi_rotan2.glb': {
-                scale: '0.55 0.55 0.55', // Diperkecil dari 1 1 1 agar tidak terlalu dekat/besar
+                scale: 0.55,
+                mobileScaleFactor: 0.82,
                 baseY: -0.45,
                 offsetX: 0,
                 offsetY: 0,
@@ -148,7 +175,8 @@
                 bg: '#ffffff'
             },
             'kursi_rotan3.glb': {
-                scale: '0.035 0.035 0.035', // Diperkecil dari 0.065 agar tidak terlalu dekat/besar
+                scale: 0.035,
+                mobileScaleFactor: 0.82,
                 baseY: -0.45,
                 offsetX: 0,
                 offsetY: -0.05,
@@ -160,13 +188,36 @@
 
         let activeConfig = chairConfig['kursi_rotan.glb'];
 
+        function getResponsiveScale(cfg) {
+            const isPortrait = window.innerHeight > window.innerWidth;
+            const factor = isPortrait ? (cfg.mobileScaleFactor || 0.85) : 1;
+            return cfg.scale * factor;
+        }
+
+        function updateCameraForViewport() {
+            const isPortrait = window.innerHeight > window.innerWidth;
+            const zPos = isPortrait ? 1.75 : 1.35;
+            const yPos = isPortrait ? 0.38 : 0.35;
+
+            cameraEntity.setAttribute('orbit-controls', {
+                target: '0 0 0',
+                initialPosition: `0 ${yPos} ${zPos}`,
+                minDistance: 0.45,
+                maxDistance: 5.5,
+                rotateSpeed: 1.6,
+                zoomSpeed: 1.25,
+                enablePan: false,
+                enableDamping: true,
+                dampingFactor: 0.12
+            });
+        }
+
         function centerModelIfNeeded() {
             const mesh = chairEntity.getObject3D('mesh');
             if (!mesh) return;
 
-            chairEntity.object3D.scale.set(
-                ...activeConfig.scale.split(' ').map(Number)
-            );
+            const finalScale = getResponsiveScale(activeConfig);
+            chairEntity.object3D.scale.set(finalScale, finalScale, finalScale);
             chairEntity.object3D.position.set(0, activeConfig.baseY, 0);
             chairEntity.object3D.updateMatrixWorld(true);
 
@@ -195,6 +246,11 @@
             centerModelIfNeeded();
         });
 
+        window.addEventListener('resize', () => {
+            updateCameraForViewport();
+            centerModelIfNeeded();
+        });
+
         buttons.forEach((btn) => {
             btn.addEventListener('click', () => {
                 const fileName = btn.getAttribute('data-src');
@@ -203,7 +259,8 @@
                 if (!config) return;
 
                 activeConfig = config;
-                chairEntity.setAttribute('scale', config.scale);
+                const finalScale = getResponsiveScale(config);
+                chairEntity.setAttribute('scale', `${finalScale} ${finalScale} ${finalScale}`);
 
                 if (chairEntity.getAttribute('gltf-model') === fileName) {
                     centerModelIfNeeded();
@@ -218,6 +275,8 @@
                 btn.classList.add('active');
             });
         });
+
+        updateCameraForViewport();
     </script>
 
 </body>
